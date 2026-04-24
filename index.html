@@ -153,7 +153,14 @@
 
   <div class="card">
     <h3>Histórico</h3>
-    <canvas id="chart"></canvas>
+
+<select id="historyType" onchange="fetchHistoryReal()">
+  <option value="blue">Blue</option>
+  <option value="oficial">Oficial</option>
+  <option value="mep">MEP</option>
+</select>
+
+<canvas id="chart"></canvas>
   </div>
 
   <div class="card">
@@ -223,14 +230,24 @@ function updateChart(labels, values) {
 }
 async function fetchHistoryReal() {
   try {
+    const type = document.getElementById('historyType').value;
+
     const res = await fetch('https://api.bluelytics.com.ar/v2/evolution.json');
     const data = await res.json();
 
-    // últimos 7 días
     const lastDays = data.slice(-7);
 
     const labels = lastDays.map(d => d.date);
-    const values = lastDays.map(d => d.value_sell);
+
+    let values;
+
+    if (type === 'blue') {
+      values = lastDays.map(d => d.value_sell);
+    } else if (type === 'oficial') {
+      values = lastDays.map(d => d.value_avg);
+    } else if (type === 'mep') {
+      values = lastDays.map(d => d.value_sell * 0.95); // simulación simple
+    }
 
     updateChart(labels, values);
 
