@@ -201,17 +201,42 @@ function convert() {
   document.getElementById('result').innerText = `USD ${result.toFixed(2)}`;
 }
 
-function createChart() {
-  new Chart(document.getElementById('chart'), {
+let chart;
+
+function updateChart(labels, values) {
+  const ctx = document.getElementById('chart');
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: ['Lun','Mar','Mie','Jue','Vie','Sab','Dom'],
+      labels: labels,
       datasets: [{
-        data: [980,990,1000,1010,1020,1015,1030],
-        borderWidth: 2
+        label: 'Dólar Blue',
+        data: values,
+        borderWidth: 2,
+        tension: 0.3
       }]
     }
   });
+}
+  async function fetchHistoryReal() {
+  try {
+    const res = await fetch('https://api.argentinadatos.com/v1/finanzas/dolares/blue');
+    const data = await res.json();
+
+    // Tomamos últimos 7 días
+    const lastDays = data.slice(-7);
+
+    const labels = lastDays.map(d => d.fecha);
+    const values = lastDays.map(d => d.venta);
+
+    updateChart(labels, values);
+
+  } catch (e) {
+    console.log("Error histórico", e);
+  }
 }
 
 function loadNews() {
@@ -225,7 +250,7 @@ function loadNews() {
 }
 
 fetchRates();
-createChart();
+fetchHistoryReal();
 loadNews();
 </script>
 
