@@ -221,16 +221,16 @@ function updateChart(labels, values) {
     }
   });
 }
-  async function fetchHistoryReal() {
+async function fetchHistoryReal() {
   try {
-    const res = await fetch('https://api.argentinadatos.com/v1/finanzas/dolares/blue');
+    const res = await fetch('https://api.bluelytics.com.ar/v2/evolution.json');
     const data = await res.json();
 
-    // Tomamos últimos 7 días
+    // últimos 7 días
     const lastDays = data.slice(-7);
 
-    const labels = lastDays.map(d => d.fecha);
-    const values = lastDays.map(d => d.venta);
+    const labels = lastDays.map(d => d.date);
+    const values = lastDays.map(d => d.value_sell);
 
     updateChart(labels, values);
 
