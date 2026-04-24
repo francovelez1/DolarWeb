@@ -228,34 +228,32 @@ function updateChart(labels, values) {
     }
   });
 }
-async function fetchHistoryReal() {
-  try {
-    const type = document.getElementById('historyType').value;
+lastDays.forEach((d, index) => {
+  const div = document.createElement('div');
+  div.className = 'history-item';
 
-    const res = await fetch('https://api.bluelytics.com.ar/v2/evolution.json');
-    const data = await res.json();
+  const dateObj = new Date(d.date);
+  const date = dateObj.toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
 
-    const lastDays = data.slice(-7);
+  // detectar hoy
+  const today = new Date().toDateString();
+  const isToday = dateObj.toDateString() === today;
 
-    const labels = lastDays.map(d => d.date);
+  // comparar con día anterior
+  const prev = index > 0 ? lastDays[index - 1].value_sell : null;
+  const diff = prev ? d.value_sell - prev : 0;
 
-    let values;
+  // estilo dinámico
+  div.style.fontWeight = isToday ? '600' : '400';
+  div.style.color = isToday ? '#22c55e' : 'white';
 
-    if (type === 'blue') {
-      values = lastDays.map(d => d.value_sell);
-    } else if (type === 'oficial') {
-      values = lastDays.map(d => d.value_avg);
-    } else if (type === 'mep') {
-      values = lastDays.map(d => d.value_sell * 0.95); // simulación simple
-    }
+  div.innerHTML = `
+    <span>${date}</span>
+    <span>$${d.value_sell} ${diff > 0 ? '📈' : diff < 0 ? '📉' : ''}</span>
+  `;
 
-    updateChart(labels, values);
-
-  } catch (e) {
-    console.log("Error histórico", e);
-  }
-}
-
+  container.appendChild(div);
+});
 function loadNews() {
   const news = [
     'Dólar en leve alza',
