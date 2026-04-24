@@ -3,43 +3,41 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dólar App Pro</title>
+  <title>Dolar Pro</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root {
-      --bg: #0f172a;
-      --card: #020617;
+      --bg: #0b1220;
+      --card: rgba(255,255,255,0.05);
+      --glass: rgba(255,255,255,0.08);
       --accent: #22c55e;
-      --text: #e2e8f0;
-      --soft: #1e293b;
-    }
-
-    body.light {
-      --bg: #f1f5f9;
-      --card: #ffffff;
-      --text: #0f172a;
-      --soft: #e2e8f0;
+      --text: #e5e7eb;
     }
 
     body {
       font-family: 'Inter', sans-serif;
-      background: var(--bg);
+      background: linear-gradient(135deg, #0b1220, #111827);
       color: var(--text);
       margin: 0;
-      transition: 0.3s;
     }
 
     header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 15px 20px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 28px;
       font-weight: 600;
-      background: var(--card);
-      position: sticky;
-      top: 0;
+    }
+
+    header p {
+      margin: 5px 0 0;
+      opacity: 0.7;
+      font-size: 14px;
     }
 
     .container {
@@ -50,69 +48,90 @@
 
     .card {
       background: var(--card);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
       padding: 20px;
-      border-radius: 16px;
       margin-bottom: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+      border: 1px solid rgba(255,255,255,0.08);
     }
 
     .rates {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-      gap: 10px;
+      gap: 12px;
     }
 
     .rate {
-      background: var(--soft);
+      background: var(--glass);
       padding: 15px;
-      border-radius: 12px;
+      border-radius: 14px;
       text-align: center;
       transition: 0.2s;
     }
 
-    .rate:hover {
-      transform: scale(1.05);
+    .rate strong {
+      display: block;
+      margin-bottom: 5px;
     }
 
-    input, select, button {
-      padding: 10px;
-      border-radius: 10px;
+    .rate:hover {
+      transform: translateY(-3px);
+    }
+
+    .calculator {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    input, select {
+      flex: 1;
+      padding: 12px;
+      border-radius: 12px;
       border: none;
-      margin: 5px;
+      background: var(--glass);
+      color: var(--text);
     }
 
     button {
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: none;
       background: var(--accent);
+      font-weight: 600;
       cursor: pointer;
     }
 
-    .row {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
+    #result {
+      margin-top: 10px;
+      font-size: 18px;
+      font-weight: 600;
     }
 
     canvas {
-      margin-top: 20px;
+      margin-top: 10px;
     }
 
     .news p {
-      margin: 6px 0;
-      font-size: 14px;
-    }
-
-    .toggle {
-      cursor: pointer;
       font-size: 14px;
       opacity: 0.8;
+      margin: 6px 0;
     }
+
+    footer {
+      text-align: center;
+      font-size: 12px;
+      opacity: 0.5;
+      padding: 20px;
+    }
+
   </style>
 </head>
 <body>
 
 <header>
-  💵 Dólar App
-  <div class="toggle" onclick="toggleTheme()">🌓 Modo</div>
+  <h1>💵 Dolar Pro</h1>
+  <p>Cotizaciones en tiempo real en Argentina</p>
 </header>
 
 <div class="container">
@@ -123,17 +142,17 @@
   </div>
 
   <div class="card">
-    <h3>Calculadora inteligente</h3>
-    <div class="row">
-      <input type="number" id="amount" placeholder="Monto">
+    <h3>Calculadora</h3>
+    <div class="calculator">
+      <input type="number" id="amount" placeholder="Monto en ARS">
       <select id="type"></select>
       <button onclick="convert()">Convertir</button>
     </div>
-    <p id="result"></p>
+    <div id="result"></div>
   </div>
 
   <div class="card">
-    <h3>Histórico real (últimos días)</h3>
+    <h3>Histórico</h3>
     <canvas id="chart"></canvas>
   </div>
 
@@ -144,59 +163,51 @@
 
 </div>
 
+<footer>
+  Hecho simple. Rápido. Útil.
+</footer>
+
 <script>
 let ratesData = [];
 
-function toggleTheme() {
-  document.body.classList.toggle('light');
-}
-
 async function fetchRates() {
-  try {
-    const res = await fetch('https://dolarapi.com/v1/dolares');
-    const data = await res.json();
-    ratesData = data;
+  const res = await fetch('https://dolarapi.com/v1/dolares');
+  const data = await res.json();
+  ratesData = data;
 
-    const container = document.getElementById('rates');
-    const select = document.getElementById('type');
+  const container = document.getElementById('rates');
+  const select = document.getElementById('type');
 
-    container.innerHTML = '';
-    select.innerHTML = '';
+  container.innerHTML = '';
+  select.innerHTML = '';
 
-    data.slice(0,6).forEach(d => {
-      const div = document.createElement('div');
-      div.className = 'rate';
-      div.innerHTML = `<strong>${d.nombre}</strong><br>$${d.venta}`;
-      container.appendChild(div);
+  data.slice(0,6).forEach(d => {
+    const div = document.createElement('div');
+    div.className = 'rate';
+    div.innerHTML = `<strong>${d.nombre}</strong>$${d.venta}`;
+    container.appendChild(div);
 
-      const opt = document.createElement('option');
-      opt.value = d.venta;
-      opt.text = d.nombre;
-      select.appendChild(opt);
-    });
-
-  } catch {
-    document.getElementById('rates').innerText = 'Error cargando datos';
-  }
+    const opt = document.createElement('option');
+    opt.value = d.venta;
+    opt.text = d.nombre;
+    select.appendChild(opt);
+  });
 }
 
 function convert() {
   const amount = document.getElementById('amount').value;
   const rate = document.getElementById('type').value;
   const result = amount / rate;
-  document.getElementById('result').innerText = `≈ USD ${result.toFixed(2)}`;
+  document.getElementById('result').innerText = `USD ${result.toFixed(2)}`;
 }
 
-async function fetchHistory() {
-  const ctx = document.getElementById('chart');
-
-  new Chart(ctx, {
+function createChart() {
+  new Chart(document.getElementById('chart'), {
     type: 'line',
     data: {
-      labels: ['-6d','-5d','-4d','-3d','-2d','Ayer','Hoy'],
+      labels: ['Lun','Mar','Mie','Jue','Vie','Sab','Dom'],
       datasets: [{
-        label: 'Dólar',
-        data: [980, 995, 1000, 1005, 1010, 1008, 1015],
+        data: [980,990,1000,1010,1020,1015,1030],
         borderWidth: 2
       }]
     }
@@ -205,17 +216,16 @@ async function fetchHistory() {
 
 function loadNews() {
   const news = [
-    'El dólar muestra leve suba hoy',
-    'Expectativa por inflación mensual',
-    'Movimientos en el mercado financiero'
+    'Dólar en leve alza',
+    'Mercado atento a inflación',
+    'Movimientos en el MEP'
   ];
 
-  const container = document.getElementById('news');
-  container.innerHTML = news.map(n => `• ${n}`).join('<br>');
+  document.getElementById('news').innerHTML = news.map(n => `<p>• ${n}</p>`).join('');
 }
 
 fetchRates();
-fetchHistory();
+createChart();
 loadNews();
 </script>
 
