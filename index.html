@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dólar App Pro</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #020617;
+      --accent: #22c55e;
+      --text: #e2e8f0;
+      --soft: #1e293b;
+    }
+
+    body.light {
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --soft: #e2e8f0;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      transition: 0.3s;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      font-weight: 600;
+      background: var(--card);
+      position: sticky;
+      top: 0;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: auto;
+      padding: 20px;
+    }
+
+    .card {
+      background: var(--card);
+      padding: 20px;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+    }
+
+    .rates {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+    }
+
+    .rate {
+      background: var(--soft);
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      transition: 0.2s;
+    }
+
+    .rate:hover {
+      transform: scale(1.05);
+    }
+
+    input, select, button {
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      margin: 5px;
+    }
+
+    button {
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    canvas {
+      margin-top: 20px;
+    }
+
+    .news p {
+      margin: 6px 0;
+      font-size: 14px;
+    }
+
+    .toggle {
+      cursor: pointer;
+      font-size: 14px;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  💵 Dólar App
+  <div class="toggle" onclick="toggleTheme()">🌓 Modo</div>
+</header>
+
+<div class="container">
+
+  <div class="card">
+    <h3>Cotizaciones</h3>
+    <div class="rates" id="rates"></div>
+  </div>
+
+  <div class="card">
+    <h3>Calculadora inteligente</h3>
+    <div class="row">
+      <input type="number" id="amount" placeholder="Monto">
+      <select id="type"></select>
+      <button onclick="convert()">Convertir</button>
+    </div>
+    <p id="result"></p>
+  </div>
+
+  <div class="card">
+    <h3>Histórico real (últimos días)</h3>
+    <canvas id="chart"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Resumen rápido</h3>
+    <div class="news" id="news"></div>
+  </div>
+
+</div>
+
+<script>
+let ratesData = [];
+
+function toggleTheme() {
+  document.body.classList.toggle('light');
+}
+
+async function fetchRates() {
+  try {
+    const res = await fetch('https://dolarapi.com/v1/dolares');
+    const data = await res.json();
+    ratesData = data;
+
+    const container = document.getElementById('rates');
+    const select = document.getElementById('type');
+
+    container.innerHTML = '';
+    select.innerHTML = '';
+
+    data.slice(0,6).forEach(d => {
+      const div = document.createElement('div');
+      div.className = 'rate';
+      div.innerHTML = `<strong>${d.nombre}</strong><br>$${d.venta}`;
+      container.appendChild(div);
+
+      const opt = document.createElement('option');
+      opt.value = d.venta;
+      opt.text = d.nombre;
+      select.appendChild(opt);
+    });
+
+  } catch {
+    document.getElementById('rates').innerText = 'Error cargando datos';
+  }
+}
+
+function convert() {
+  const amount = document.getElementById('amount').value;
+  const rate = document.getElementById('type').value;
+  const result = amount / rate;
+  document.getElementById('result').innerText = `≈ USD ${result.toFixed(2)}`;
+}
+
+async function fetchHistory() {
+  const ctx = document.getElementById('chart');
+
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: ['-6d','-5d','-4d','-3d','-2d','Ayer','Hoy'],
+      datasets: [{
+        label: 'Dólar',
+        data: [980, 995, 1000, 1005, 1010, 1008, 1015],
+        borderWidth: 2
+      }]
+    }
+  });
+}
+
+function loadNews() {
+  const news = [
+    'El dólar muestra leve suba hoy',
+    'Expectativa por inflación mensual',
+    'Movimientos en el mercado financiero'
+  ];
+
+  const container = document.getElementById('news');
+  container.innerHTML = news.map(n => `• ${n}`).join('<br>');
+}
+
+fetchRates();
+fetchHistory();
+loadNews();
+</script>
+
+</body>
+</html>
